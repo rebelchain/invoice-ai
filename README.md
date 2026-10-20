@@ -2,7 +2,7 @@
 
 ## Logger & Debug Helper
 
-```
+```python
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
@@ -16,7 +16,7 @@ def dbg(label: str, obj) -> None:
 
 ## Custom Exception
 
-```
+```python
 class FraudDetector(Exception):
   pass
 
@@ -26,7 +26,7 @@ class ConnectionError(Exception):
 
 ## Model Schema
 
-```
+```python
 class RawInvoice(TypedDict):
   id_invoice: str
   items: list[dict]
@@ -59,7 +59,7 @@ class InvoiceValid(BaseModel):
 
 ## Function
 
-```
+```python
 
 async def simpan_ke_db(id_invoice: str):
   await asyncio.sleep(2)
@@ -105,7 +105,7 @@ async def stream_laporan(daftar_sukses: list[InvoiceValid]):
 
 ## Data Test
 
-```
+```python
 data_test = [
     # Invoice Sempurna
     {"id_invoice": "INV-1001", "items": [{"nama": "Server", "harga": 5000}, {"nama": "Mouse", "harga": 1000}], "total_tagihan": 6000},
@@ -121,7 +121,7 @@ data_test = [
 
 ## Run Module
 
-```
+```python
 async def main():
   hasil = await asyncio.gather(
     proses_satu_invoice(data_test[0]),
