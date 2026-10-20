@@ -1,7 +1,7 @@
 import logging
 from typing import TypedDict, Annotated
 from pydantic import BaseModel, Field, ValidationError, ConfigDict, field_validator, ValidationInfo
-from tenacity import retry, stop_after_attempt, wait_exponential, wait_fixed
+from tenacity import retry, stop_after_attempt,  wait_fixed
 import asyncio
 from random import choice
 
@@ -22,10 +22,6 @@ def dbg(label: str, obj) -> None:
 #CUSTOM ERROR
 class FraudDetector(Exception):
   pass
-
-class ConnectionError(Exception):
-  pass
-
 
 
 #MODEL SCHEMA
@@ -67,14 +63,15 @@ async def simpan_ke_db(id_invoice: str):
   logger.info(f"Invoice berhasil disimpan: {id_invoice}")
 
 @retry(stop=stop_after_attempt(3), wait=wait_fixed(1))
-async def panggil_api_ekstraksi(raw_data: RawInvoice) -> dict:
+async def panggil_api_ekstraksi(raw_data: RawInvoice) -> RawInvoice:
   random_choice = choice([True, False])
   if random_choice == True:
     raise ConnectionError("API LLM Down")
   return raw_data
 
 
-async def proses_satu_invoice(raw_data: RawInvoice):
+async def proses_satu_invoice(raw_data: RawInvoice, tasks: list):
+  isvalid_invoice = None 
   try:
     api_ekstraksi = await panggil_api_ekstraksi(raw_data)
     isvalid_invoice = InvoiceValid(**api_ekstraksi)
@@ -84,13 +81,14 @@ async def proses_satu_invoice(raw_data: RawInvoice):
 
   except ValidationError as e:
     logger.warning("Peringatan: LLM Format salah!", exc_info=True )
+    return None
   except FraudDetector as e:
     logger.error(e)
   except Exception as e:
     logger.error(e)
   else:
     logger.info("Invoice Valid")
-    asyncio.create_task(simpan_ke_db(id_invoice=isvalid_invoice.id_invoice))
+    tasks.append(asyncio.create_task(simpan_ke_db(isvalid_invoice.id_invoice)))
     return isvalid_invoice
   finally:
     logger.info(f"Selesai memproses invoice: {raw_data['id_invoice']}")
@@ -117,10 +115,11 @@ data_test = [
 
 
 async def main():
+  tasks = []
   hasil = await asyncio.gather(
-    proses_satu_invoice(data_test[0]),
-    proses_satu_invoice(data_test[1]),
-    proses_satu_invoice(data_test[2])
+    proses_satu_invoice(data_test[0], tasks),
+    proses_satu_invoice(data_test[1], tasks),
+    proses_satu_invoice(data_test[2], tasks)
   )
 
   daftar_sukses = [h for h in hasil if h is not None]
@@ -128,6 +127,8 @@ async def main():
   async for token in stream_laporan(daftar_sukses):
     print(token, end=" ", flush=True)
   print()
+
+  await asyncio.gather(*tasks)
 
 
 
