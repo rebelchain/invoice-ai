@@ -1,5 +1,18 @@
 # Exercise for My Programming Logic in "Python for AI Engineering"
 
+## Import
+
+```python
+import logging
+from typing import TypedDict, Annotated
+from pydantic import BaseModel, Field, ValidationError, ConfigDict, field_validator, ValidationInfo
+from tenacity import retry, stop_after_attempt, wait_fixed
+import asyncio
+from random import choice
+
+
+```
+
 ## Logger & Debug Helper
 
 ```python
