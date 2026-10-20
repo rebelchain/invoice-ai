@@ -156,6 +156,6 @@ source .venv/bin/activate
 # On Git Bash Windows:
 source .venv/Scripts/activate
 
-# Install the required data science packages
+# Install the required package
 pip install -r requirements.txt
 ```
